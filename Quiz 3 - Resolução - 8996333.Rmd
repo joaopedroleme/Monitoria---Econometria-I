@@ -1,0 +1,168 @@
+---
+title: "Quiz 3"
+author: "João Pedro V. M. Leme"
+date: '2022-05-26'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r library}
+library(wooldridge)
+```
+
+## Questão 1
+
+```{r preliminares}
+df1 <- wooldridge::discrim
+
+summary(df1)
+```
+## (a)
+
+Os valores médios de prpblck e renda na amostra são, respectivamente, 0.11349 e 47054. Prpblck mede uma proporção, logo está em porcentagem (equivalente a 11,346%). A renda é medida em dólares/ano (ou seja, renda anual média da amostra é US$47.054,00).
+
+## (b)
+
+```{r ols1}
+ols1 <- lm(formula = df1$psoda ~df1$prpblck + df1$income, data = df1)
+
+summary(ols1)
+
+length(ols1)
+```
+
+Estimando o modelo, obtemos os seguintes resultados: beta0_hat = 0.9563, beta1_hat = 0.150 e beta2_hat = 0.000001603. o R² é 0.06422 e o tamanho da amostra é 13.
+
+A interpretação do coeficiente em prpblck é a seguinte: espera-se que haja um aumento de 0.1150*z no preço do refrigerante para cada z adicional na proporção de negros em determinada região.
+ 
+## (c)
+
+```{r ols2}
+ols2 <- lm(formula = df1$psoda ~df1$prpblck, data = df1)
+
+summary(ols2)
+```
+
+Nesta regressão simples, encontramos alpha1_hat = 0.06493, que é menor do que o beta1_hat encontrado na regressão múltipla do item anterior. Isto indica que, quando controlamos pela renda, o efeito da discriminação é maior do que quando não fazemos este controle.
+
+## (d)
+
+```{r ols3}
+ols3 <- lm(formula = log(df1$psoda) ~df1$prpblck + log(df1$income), data = df1)
+
+summary(ols3)
+```
+
+Estimando o modelo com elasticidade-preo constante em relação à receita, obtemos os seguintes valores para os estimadores: phi0_hat = -0.79377, phi1_hat = 0.12158 e phi2_hat = 0.07651.
+
+```{r aumento}
+aumento <- coef(ols3)[2] + 0.2
+aumento
+```
+
+Um aumento de 0.20 na proporção de negros está associado a um aumento de US$0,3215803 no preço do refrigerante.
+
+## (e)
+
+```{r ols4}
+ols4 <- lm(formula = log(df1$psoda) ~df1$prpblck + log(df1$income) + df1$prppov, data = df1)
+
+summary(ols4)
+```
+
+Ao controlarmos pelo percentual de pessoas pobres, o estimador da variável prpblck passa a ser 0.07281, ou seja, há uma diminuição em seu valor com relação à regressão anterior. Isso significa que parte da variação antes atribuída à proporção da população negra passa a ser explicada pela variável da proporção de pessoas pobres, indicando que há correlação entre as duas variáveis explicativas.
+
+## (f)
+
+```{r correlação}
+cor.test(log(df1$income), df1$prppov, method = "pearson")
+```
+
+Pelo método de Pearson, a correlação entre log(renda) e prppov é de -0.83467.
+
+## (g)
+
+A afirmação está equivocada. No caso de regressões lineares múltiplas, é muito comum que algumas variáveis explicativas sejam correlacionadas entre si, mesmo em termos quantitativos bastante expressivos (próximos aos limites de -1 ou +1). Ainda que essa situação possa causar algum tipo de confusão ou não-confiança na precisão dos estimadores encontrados, ela não invalida, por si só, a regressão pretendida (desde que o pesquisador compreenda bem ou preveja este fato). Só haveria problema maior no caso de multicolinearidade perfeita, quando, de fato, não seria possível calcular qualquer estimador de mínimos quadrados para a regressão pretendida.
+
+## Questão 2
+
+```{r library questão 2}
+library(wooldridge)
+df2 <- wooldridge::nbasal
+```
+
+## (a)
+
+Pelo enunciado, devemos estimar a seguinte regressão múltipla:
+
+points = b0 + b1exper + b2exper² + b3age + b4coll
+
+```{r ols5}
+ols5 <- lm(formula = df2$points ~df2$exper + df2$expersq + df2$age + df2$coll, data = df2)
+
+summary(ols5)
+```
+
+O modelo nos retorna os seguintes resultados: b0_hat = 35.21831, b1_hat = 2.36363, b2_hat = -0.07703, b3_hat = -1.07396, b4_hat = -1.28625, R² = 0.1412 e tamanho amostral de 12.
+
+## (b)
+
+```{r variação experiência}
+variacao1 <- coef(ols5)[2] + 1
+
+variacao2 <- coef(ols5)[3] + 1
+
+variacao1
+variacao2
+```
+
+A afirmação não faz sentido, uma vez que, mantendo a idade e os anos de faculdade fixos, o modelo nos retorna um acréscimo de 3.363631 pontos por jogo para um aumento de 1 ano de experiência (e 1 ano de "epxeriência quadrada").
+
+##(c)
+
+```{r ols6}
+ols6 <- lm(formula = log(df2$wage) ~df2$points + df2$exper + df2$expersq +df2$age + df2$coll, data = df2)
+
+summary(ols6)
+```
+
+O R² da regressão estimada é de 0.4878, enquanto o R²-ajustado é de 0.4781.
+
+```{r nova variacao de experiência}
+nova_variacao <- coef(ols6)[3] + 1
+
+nova_variacao2 <- coef(ols6)[4] + 1
+
+nova_variacao
+nova_variacao2
+```
+
+Um aumento de 1 ano de experiência acrescenta 1.217845 (e 0.9929179, no caso da variável explicativa quadrática) no log dos salários dos jogadores da NBA.
+
+## Questão 3
+
+```{r library questão 3}
+library(wooldridge)
+df3 <- wooldridge::wage2
+```
+
+## (a)
+
+```{r ols7}
+ols7 <- lm(formula = log(df3$wage) ~df3$educ + df3$exper, data = df3)
+
+summary(ols7)
+```
+
+Ao nível de significância de alpha = 0.05, podemos rejeitar a hipótese nula de que b1 = 0, uma vez que seu p-valor 2.2e-16, ou seja, menor do que o necessário para sua rejeição.
+
+## (b)
+
+```{r intervalo de confiança para b1}
+confint(ols7, level = 0.95)
+```
+
+Construindo o intervalo de confiança de 95% para b1, temos que seu limite inferior é 0.06487479 e seu limite superior é 0.09068916.
