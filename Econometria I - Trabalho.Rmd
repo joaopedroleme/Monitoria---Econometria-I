@@ -1,0 +1,181 @@
+---
+title: "Trabalho Econometria"
+author: "Fernanda Leite Peron Pereira e João Pedro Viegas de Moraes Leme"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r libraries and dataframe}
+library(readxl)
+library(stargazer)
+library(sandwich)
+library(AER)
+df <- read_excel("Downloads/Tema 4 - Educação dos Pais em Notas de Matemática.xlsx")
+
+```
+
+## Regressão Simples - Níveis educacionais da mãe
+
+```{r educmae, echo=FALSE}
+maeanalf <- lm(df$notamat ~df$educmae1, data = df)
+maeanalf_se_hom <- summary(maeanalf)$coef[,2]
+
+maefund1 <- lm(df$notamat ~df$educmae2, data = df)
+maefund1_se_hom <- summary(maefund1)$coef[,2]
+
+maefund2 <- lm(df$notamat ~df$educmae3, data = df)
+maefund2_se_hom <- summary(maefund2)$coef[,2]
+
+maemedioinc <- lm(df$notamat ~df$educmae4, data = df)
+maemedioinc_se_hom <- summary(maemedioinc)$coef[,2]
+
+maemedio <- lm(df$notamat ~df$educmae5, data = df)
+maemedio_se_hom <- summary(maemedio)$coef[,2]
+
+maesup <- lm(df$notamat ~df$educmae6, data = df)
+maesup_se_hom <- summary(maeanalf)$coef[,2]
+```
+
+## Regressão Simples - Níveis educacionais do pai
+
+```{r educpai, echo = FALSE}
+paianalf <- lm(df$notamat ~df$educpai1, data = df)
+paianalf_se_hom <- summary(paianalf)$coef[,2]
+
+paifund1 <- lm(df$notamat ~df$educpai2, data = df)
+paifund1_se_hom <- summary(paifund1)$coef[,2]
+
+paifund2 <- lm(df$notamat ~df$educpai3, data = df)
+paifund2_se_hom <- summary(paifund2)$coef[,2]
+
+paimedioinc <- lm(df$notamat ~df$educpai4, data = df)
+paimedioinc_se_hom <- summary(paimedioinc)$coef[,2]
+
+paimedio <- lm(df$notamat ~df$educpai5, data = df)
+paimedio_se_hom <- summary(paimedio)$coef[,2]
+
+paisup <- lm(df$notamat ~df$educpai6, data = df)
+paisup_se_hom <- summary(paisup)$coef[,2]
+```
+
+## Comparando diferentes regressões simples entre níveis educacionais similares
+
+Entre aqueles que nunca estudaram:
+
+```{r nunca estudaram}
+stargazer(maeanalf, paianalf, se = list(maeanalf_se_hom, paianalf_se_hom),
+          df = FALSE, no.space = TRUE, type = "text")
+```
+
+Entre aqueles que possuem até o Ensino Fundamental 1 completo:
+
+```{r fund1}
+stargazer(maefund1, paifund1, se = list(maefund1_se_hom, paifund1_se_hom),
+          df = FALSE, no.space = TRUE, type = "text")
+```
+
+Entre aqueles que possuem até o Ensino Fundamental 2 completo:
+
+```{r fund2}
+stargazer(maefund2, paifund2, se = list(maefund2_se_hom, paifund2_se_hom),
+          df = FALSE, no.space = TRUE, type = "text")
+```
+
+Entre aqueles que possuem Ensino Médio incompleto:
+
+```{r medioinc}
+stargazer(maemedioinc, paimedioinc, se = list(maemedioinc_se_hom, paimedioinc_se_hom),
+          df = FALSE, no.space = TRUE, type = "text")
+```
+
+Entre aqueles que possuem Ensino Médio completo:
+
+```{r medio}
+stargazer(maemedio, paimedio, se = list(maemedio_se_hom, paimedio_se_hom),
+          df = FALSE, no.space = TRUE, type = "text")
+```
+
+Entre aqueles que possuem Ensino Superior:
+
+```{r sup}
+stargazer(maesup, paisup, se = list(maesup_se_hom, paisup_se_hom),
+          df = FALSE, no.space = TRUE, type = "text")
+```
+
+## Criando uma variável composta a partir das conclusões parciais sobre a regressão simples de melhor fit
+
+```{r novo ols}
+
+dmedio <- df$educmae5*df$educpai5
+
+parentsmedio_hom <- lm(df$notamat ~dmedio, data = df)
+
+parentsmedio_se_hom <- summary(parentsmedio_hom)$coef[,2]
+
+stargazer(parentsmedio_hom, se = list(parentsmedio_se_hom), df = FALSE, no.space = TRUE, type = "text")
+
+```
+
+## Testando estimadores robustos a heterocedasticidade
+
+```{r heterocedasticidade}
+parentsmedio_het <- lm(df$notamat ~dmedio, data = df)
+
+parentsmedio_se_het <- sqrt(diag(hccm(parentsmedio_het, type = 'hc1')))
+stargazer(parentsmedio_hom, parentsmedio_het,
+          se = list(parentsmedio_se_hom, parentsmedio_se_het), df = FALSE, 
+          no.space = TRUE, type = "text")
+```
+
+## Verificando o viés - RLS
+```{r bias rls, echo = FALSE}
+plot(cooks.distance(model = parentsmedio_hom))
+```
+
+## Regressão Múltipla 
+
+```{r modelo rlm}
+dtrabsex <-  df$trabalha*df$sexo
+dtrabraca <- df$trabalha*df$negro
+
+completo <- lm(df$notamat ~df$sexo + df$negro + df$computadornet
+               + df$moramae +  df$educmae1 + df$educmae2
+               + df$educmae3 + df$educmae4 + df$educmae5 + df$educmae6 +
+               df$educpai1 + df$educpai2 + df$educpai3 + df$educpai4 + df$educpai5
+               + df$educpai6 +df$morapai + df$iraula +df$livro + df$trabalha +
+                 dtrabsex + dtrabraca + df$reprovou + df$abandonou + df$experprof1 +
+                 df$experprof2 + df$experprof3 + df$experprof4 + df$experprof5 +
+                 df$superior + df$posgrad + df$tamturma, data = df)
+
+completo_se_hom <- summary(completo)$coef[,2] 
+
+stargazer(completo, se = list(completo_se_hom), df = FALSE, no.space = TRUE, type = "text" )
+```
+
+## Verificar estimadores robustos à heterocedasticidade e autocorrelação
+
+```{r heterocedasticidade e autocorr}
+completo1 <- lm(df$notamat ~df$sexo + df$negro + df$computadornet
+                + df$moramae +  df$educmae1 + df$educmae2
+                + df$educmae3 + df$educmae4 + df$educmae5 + df$educmae6 +
+                  df$educpai1 + df$educpai2 + df$educpai3 + df$educpai4 + df$educpai5
+                + df$educpai6 +df$morapai + df$iraula +df$livro + df$trabalha +
+                  dtrabsex + dtrabraca + df$reprovou + df$abandonou + df$experprof1 +
+                  df$experprof2 + df$experprof3 + df$experprof4 + df$experprof5 +
+                  df$superior + df$posgrad + df$tamturma, data = df)
+
+completo_se_hom <- summary(completo)$coef[,2] 
+completo_se_het <- sqrt(diag(hccm(completo, type = 'hc1')))
+
+stargazer(completo, completo1, se = list(completo_se_hom, completo_se_het), df = FALSE, no.space = TRUE, type = "text")
+```
+
+## Verificando viés - RLM
+
+```{r bias rlm, echo = FALSE}
+plot(cooks.distance(model = completo))
+```
